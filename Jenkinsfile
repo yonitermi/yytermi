@@ -136,11 +136,47 @@ pipeline {
                           chmod +x /home/ubuntu/install_Docker.sh
                           /home/ubuntu/install_Docker.sh
                           sudo reboot
-EOF
+        EOF
                         """
                     } else {
                         echo "Docker is already installed on the EC2 instance. Skipping installation."
                     }
+                }
+            }
+        }
+
+        stage('Prepare Environment on EC2') {
+            steps {
+                script {
+                    sh """
+                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${env.PUBLIC_IP} 'mkdir -p /home/ubuntu/yytermi'
+                    """
+                }
+            }
+        }
+
+        stage('Copy Docker Compose and NGINX Files') {
+            steps {
+                script {
+                    // Copy docker-compose.yml and nginx.conf to the EC2 instance
+                    sh """
+                    scp -i temp_key.pem -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${env.PUBLIC_IP}:/home/ubuntu/yytermi/docker-compose.yml
+                    scp -i temp_key.pem -o StrictHostKeyChecking=no nginx.conf ubuntu@${env.PUBLIC_IP}:/home/ubuntu/yytermi/nginx.conf
+                    """
+                }
+            }
+        }
+
+        stage('Deploy Containers with Docker Compose') {
+            steps {
+                script {
+                    // SSH into the EC2 instance and start Docker Compose
+                    sh """
+                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${env.PUBLIC_IP} <<EOF
+                    cd /home/ubuntu/yytermi
+                    docker-compose up -d
+        EOF
+                    """
                 }
             }
         }
