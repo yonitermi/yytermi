@@ -78,12 +78,3 @@ resource "aws_instance" "yytermi_ubuntu_server" {
   }
 }
 
-# Output the instance's public IP address
-output "public_ip" {
-  value = aws_instance.yytermi_ubuntu_server.public_ip
-}
-
-output "instance_id" {
-  value = aws_instance.yytermi_ubuntu_server.id
-}
-
