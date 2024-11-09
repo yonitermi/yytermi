@@ -19,7 +19,6 @@ pipeline {
                                   accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                                   secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                     script {
-                        // Initialize and apply Terraform to create the key pair
                         dir('terraform') {
                             sh """
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -40,7 +39,6 @@ pipeline {
                                   accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                                   secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                     script {
-                        // Apply Terraform to create the security group
                         dir('terraform') {
                             sh """
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -60,7 +58,6 @@ pipeline {
                                   accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                                   secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                     script {
-                        // Apply Terraform to create the EC2 instance with the key pair and security group
                         dir('terraform') {
                             sh """
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -76,7 +73,6 @@ pipeline {
         stage('Retrieve Terraform Outputs') {
             steps {
                 script {
-                    // Retrieve the EC2 public IP and private key for SSH
                     dir('terraform') {
                         env.PUBLIC_IP = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
                         env.PRIVATE_KEY = sh(script: "terraform output -raw private_key_pem", returnStdout: true).trim()
@@ -85,25 +81,66 @@ pipeline {
             }
         }
 
-        stage('Upload and Execute Docker Install Script on EC2') {
+        stage('Wait for EC2 Instance SSH Ready') {
             steps {
                 script {
-                    // Write the private key to a temporary file
                     writeFile file: 'temp_key.pem', text: env.PRIVATE_KEY
                     sh 'chmod 400 temp_key.pem'
 
-                    // Copy the install_Docker.sh script to the EC2 instance
-                    sh """
-                    scp -i temp_key.pem -o StrictHostKeyChecking=no install_Docker.sh ubuntu@${env.PUBLIC_IP}:/home/ubuntu/install_Docker.sh
-                    """
+                    def retries = 5
+                    def waitTime = 10
+                    def success = false
 
-                    // SSH into the EC2 instance to set permissions and execute the script
-                    sh """
-                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${env.PUBLIC_IP} << 'EOF'
-                      chmod +x /home/ubuntu/install_Docker.sh
-                      /home/ubuntu/install_Docker.sh
-                    EOF
-                    """
+                    for (int i = 0; i < retries; i++) {
+                        try {
+                            sh """
+                            ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${env.PUBLIC_IP} echo 'Instance is ready'
+                            """
+                            success = true
+                            break
+                        } catch (Exception e) {
+                            echo "SSH connection attempt ${i + 1} failed. Retrying in ${waitTime} seconds..."
+                            sleep(waitTime)
+                        }
+                    }
+
+                    if (!success) {
+                        error("Failed to connect to EC2 instance after ${retries} attempts.")
+                    }
+                }
+            }
+        }
+
+        stage('Upload and Execute Docker Install Script on EC2') {
+            steps {
+                script {
+                    // Check if Docker is already installed
+                    def dockerInstalled = false
+                    try {
+                        dockerInstalled = sh(script: """
+                        ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${env.PUBLIC_IP} 'docker --version || echo "not_installed"'
+                        """, returnStdout: true).trim() != "not_installed"
+                    } catch (Exception e) {
+                        dockerInstalled = false
+                    }
+
+                    if (!dockerInstalled) {
+                        // Copy the install_Docker.sh script if Docker is not installed
+                        sh """
+                        scp -i temp_key.pem -o StrictHostKeyChecking=no install_Docker.sh ubuntu@${env.PUBLIC_IP}:/home/ubuntu/install_Docker.sh
+                        """
+
+                        // SSH into the EC2 instance to set permissions and execute the script
+                        sh """
+                        ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${env.PUBLIC_IP} <<EOF
+                          chmod +x /home/ubuntu/install_Docker.sh
+                          /home/ubuntu/install_Docker.sh
+                          sudo reboot
+EOF
+                        """
+                    } else {
+                        echo "Docker is already installed on the EC2 instance. Skipping installation."
+                    }
                 }
             }
         }
@@ -111,7 +148,6 @@ pipeline {
 
     post {
         always {
-            // Clean up the temporary private key file
             sh 'rm -f temp_key.pem'
             echo 'Pipeline finished!'
         }
