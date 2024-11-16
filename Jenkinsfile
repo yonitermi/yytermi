@@ -63,8 +63,8 @@ pipeline {
                     dir('terraform') {
                         // Retrieve SSH Private Key
                         env.PRIVATE_KEY = sh(script: "terraform output -raw private_key_pem", returnStdout: true).trim()
-                        writeFile file: 'temp_key.pem', text: env.PRIVATE_KEY
-                        sh 'chmod 400 temp_key.pem'
+                        writeFile file: '/tmp/temp_key.pem', text: env.PRIVATE_KEY
+                        sh 'chmod 400 /tmp/temp_key.pem'
 
                         // Retrieve EC2 Public IP
                         env.PUBLIC_IP = sh(script: "terraform output -raw elastic_ip", returnStdout: true).trim()
@@ -73,6 +73,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('Push Code to EC2') {
             steps {
