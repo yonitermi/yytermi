@@ -75,23 +75,11 @@ pipeline {
                 }
             }
         }
-
-
-
-
-        /*
+        
         stage('Push Code to EC2') {
             steps {
                 withCredentials([file(credentialsId: 'yytermi_mysql_credential', variable: 'ENV_FILE')]) {
                     script {
-                        // Debug SSH key and Elastic IP
-                        sh '''
-                        echo "Checking temp_key.pem:"
-                        ls -l temp_key.pem
-                        echo "Testing SSH connection:"
-                        ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP echo "SSH Connection Successful"
-                        '''
-
                         // Securely transfer files
                         sh '''
                         scp -i temp_key.pem -o StrictHostKeyChecking=no docker-compose.yml ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/
@@ -104,28 +92,30 @@ pipeline {
             }
         }
 
-        
-                stage('Install Docker on EC2') {
-                    steps {
-                        script {
-                            sh '''
-                            ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP 'chmod +x /home/ubuntu/yytermi/install_Docker.sh && /home/ubuntu/yytermi/install_Docker.sh'
-                            '''
-                        }
-                    }
-                }
-
-                stage('Deploy Containers with Docker Compose') {
-                    steps {
-                        script {
-                            sh '''
-                            ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP 'cd /home/ubuntu/yytermi && docker-compose up -d'
-                            '''
-                        }
+        /*
+        stage('Install Docker on EC2') {
+                steps {
+                    script {
+                        sh '''
+                        ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP 'chmod +x /home/ubuntu/yytermi/install_Docker.sh && /home/ubuntu/yytermi/install_Docker.sh'
+                        '''
                     }
                 }
             }
-        */
+
+            stage('Deploy Containers with Docker Compose') {
+                steps {
+                    script {
+                        sh '''
+                        ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP 'cd /home/ubuntu/yytermi && docker-compose up -d'
+                        '''
+                    }
+                }
+            }
+        }
+
+    */
+
     }     
 
     post {
