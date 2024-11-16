@@ -15,9 +15,9 @@ pipeline {
         stage('Create AWS Resources') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
-                                credentialsId: 'yytermi_aws', 
-                                accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
-                                secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                                  credentialsId: 'yytermi_aws', 
+                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                     script {
                         dir('terraform') {
                             sh """
@@ -36,13 +36,12 @@ pipeline {
             }
         }
 
-
         stage('Create EC2 Instance') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
-                                credentialsId: 'yytermi_aws', 
-                                accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
-                                secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                                  credentialsId: 'yytermi_aws', 
+                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                     script {
                         dir('terraform') {
                             sh """
@@ -57,13 +56,12 @@ pipeline {
                 }
             }
         }
-
+    }
 
     post {
         always {
+            echo 'Cleaning up temporary files...'
             sh 'rm -f temp_key.pem'
-            echo 'Pipeline finished!'
         }
     }
 }
-
