@@ -78,6 +78,15 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'yytermi_mysql_credential', variable: 'ENV_FILE')]) {
                     script {
+                        // Debug SSH key and Elastic IP
+                        sh '''
+                        echo "Checking temp_key.pem:"
+                        ls -l temp_key.pem
+                        echo "Testing SSH connection:"
+                        ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP echo "SSH Connection Successful"
+                        '''
+
+                        // Securely transfer files
                         sh '''
                         scp -i temp_key.pem -o StrictHostKeyChecking=no docker-compose.yml ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/
                         scp -i temp_key.pem -o StrictHostKeyChecking=no nginx.conf ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/
@@ -89,6 +98,7 @@ pipeline {
             }
         }
 
+/*
         stage('Install Docker on EC2') {
             steps {
                 script {
@@ -109,7 +119,7 @@ pipeline {
             }
         }
     }
-
+*/
     post {
         always {
             echo 'Cleaning up temporary files...'
