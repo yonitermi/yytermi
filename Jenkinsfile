@@ -59,7 +59,7 @@ pipeline {
         
         stage('Push Code to EC2') {
             steps {
-                withCredentials([file(credentialsId: 'env_file', variable: 'ENV_FILE')]) {
+                withCredentials([file(credentialsId: 'yytermi_mysql_credential', variable: 'ENV_FILE')]) {
                     script {
                         // Push required files to the EC2 instance
                         sh """
