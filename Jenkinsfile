@@ -56,7 +56,44 @@ pipeline {
                 }
             }
         }
+        
+        stage('Push Code to EC2') {
+            steps {
+                withCredentials([file(credentialsId: 'env_file', variable: 'ENV_FILE')]) {
+                    script {
+                        // Push required files to the EC2 instance
+                        sh """
+                        scp -i temp_key.pem -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${env.PUBLIC_IP}:/home/ubuntu/yytermi/
+                        scp -i temp_key.pem -o StrictHostKeyChecking=no nginx.conf ubuntu@${env.PUBLIC_IP}:/home/ubuntu/yytermi/
+                        scp -i temp_key.pem -o StrictHostKeyChecking=no install_Docker.sh ubuntu@${env.PUBLIC_IP}:/home/ubuntu/yytermi/
+                        scp -i temp_key.pem -o StrictHostKeyChecking=no $ENV_FILE ubuntu@${env.PUBLIC_IP}:/home/ubuntu/yytermi/.env
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Install Docker on EC2') {
+            steps {
+                script {
+                    sh """
+                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${env.PUBLIC_IP} 'chmod +x /home/ubuntu/yytermi/install_Docker.sh && /home/ubuntu/yytermi/install_Docker.sh'
+                    """
+                }
+            }
+        }
+
+        stage('Deploy Containers with Docker Compose') {
+            steps {
+                script {
+                    sh """
+                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${env.PUBLIC_IP} 'cd /home/ubuntu/yytermi && docker-compose up -d'
+                    """
+                }
+            }
+        }
     }
+    
 
     post {
         always {
