@@ -98,28 +98,30 @@ pipeline {
             }
         }
 
-/*
-        stage('Install Docker on EC2') {
-            steps {
-                script {
-                    sh '''
-                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP 'chmod +x /home/ubuntu/yytermi/install_Docker.sh && /home/ubuntu/yytermi/install_Docker.sh'
-                    '''
+        /*
+                stage('Install Docker on EC2') {
+                    steps {
+                        script {
+                            sh '''
+                            ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP 'chmod +x /home/ubuntu/yytermi/install_Docker.sh && /home/ubuntu/yytermi/install_Docker.sh'
+                            '''
+                        }
+                    }
                 }
-            }
-        }
 
-        stage('Deploy Containers with Docker Compose') {
-            steps {
-                script {
-                    sh '''
-                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP 'cd /home/ubuntu/yytermi && docker-compose up -d'
-                    '''
+                stage('Deploy Containers with Docker Compose') {
+                    steps {
+                        script {
+                            sh '''
+                            ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP 'cd /home/ubuntu/yytermi && docker-compose up -d'
+                            '''
+                        }
+                    }
                 }
             }
-        }
-    }
-*/
+        */
+    }     
+
     post {
         always {
             echo 'Cleaning up temporary files...'
