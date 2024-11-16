@@ -57,6 +57,23 @@ pipeline {
             }
         }
         
+
+        stage('Retrieve Terraform Outputs') {
+            steps {
+                script {
+                    dir('terraform') {
+                        env.PRIVATE_KEY = sh(script: "terraform output -raw private_key_pem", returnStdout: true).trim()
+                        writeFile file: 'temp_key.pem', text: env.PRIVATE_KEY
+                        sh 'chmod 400 temp_key.pem'
+
+                        env.PUBLIC_IP = sh(script: "terraform output -raw elastic_ip", returnStdout: true).trim()
+                        echo "EC2 Public IP: ${env.PUBLIC_IP}"
+                    }
+                }
+            }
+        }
+
+
         stage('Push Code to EC2') {
             steps {
                 withCredentials([file(credentialsId: 'yytermi_mysql_credential', variable: 'ENV_FILE')]) {
