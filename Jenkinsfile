@@ -61,20 +61,28 @@ pipeline {
             steps {
                 script {
                     dir('terraform') {
-                        // Retrieve SSH Private Key
+                        // Retrieve the private key
+                        echo "Fetching private_key_pem from Terraform outputs..."
                         env.PRIVATE_KEY = sh(script: "terraform output -raw private_key_pem", returnStdout: true).trim()
-                        writeFile file: '/tmp/temp_key.pem', text: env.PRIVATE_KEY
-                        sh 'chmod 400 /tmp/temp_key.pem'
+                        echo "PRIVATE_KEY Retrieved: ${env.PRIVATE_KEY.startsWith('-----BEGIN RSA PRIVATE KEY-----') ? 'exists' : 'does not exist or invalid'}"
 
-                        // Retrieve EC2 Public IP
-                        env.PUBLIC_IP = sh(script: "terraform output -raw elastic_ip", returnStdout: true).trim()
-                        echo "EC2 Public IP: ${env.PUBLIC_IP}"
+                        // Write the private key to a file
+                        writeFile file: 'temp_key.pem', text: env.PRIVATE_KEY
+                        sh 'chmod 400 temp_key.pem'
+                        echo "temp_key.pem created in workspace. Listing workspace files..."
+                        sh 'ls -l temp_key.pem'
+
+                        // Retrieve the public IP
+                        echo "Fetching public_ip from Terraform outputs..."
+                        env.PUBLIC_IP = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
+                        echo "Public IP Retrieved: ${env.PUBLIC_IP}"
                     }
                 }
             }
         }
 
 
+        /*
         stage('Push Code to EC2') {
             steps {
                 withCredentials([file(credentialsId: 'yytermi_mysql_credential', variable: 'ENV_FILE')]) {
@@ -99,7 +107,7 @@ pipeline {
             }
         }
 
-        /*
+        
                 stage('Install Docker on EC2') {
                     steps {
                         script {
