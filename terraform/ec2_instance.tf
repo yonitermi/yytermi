@@ -21,3 +21,7 @@ resource "aws_instance" "yytermi_ubuntu_server" {
   }
 }
 
+resource "aws_eip_association" "yytermi_eip_attach" {
+  instance_id   = aws_instance.yytermi_ubuntu_server.id
+  allocation_id = aws_eip.yytermi_static_ip.id
+}
