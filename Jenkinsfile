@@ -66,11 +66,11 @@ pipeline {
                         env.PRIVATE_KEY = sh(script: "terraform output -raw private_key_pem", returnStdout: true).trim()
                         echo "PRIVATE_KEY Retrieved: ${env.PRIVATE_KEY.startsWith('-----BEGIN RSA PRIVATE KEY-----') ? 'exists' : 'does not exist or invalid'}"
 
-                        // Write the private key to a file
-                        writeFile file: 'temp_key.pem', text: env.PRIVATE_KEY
-                        sh 'chmod 400 temp_key.pem'
-                        echo "temp_key.pem created in workspace. Listing workspace files..."
-                        sh 'ls -l temp_key.pem'
+                        // Write the private key to a temporary file
+                        writeFile file: '/tmp/temp_key.pem', text: env.PRIVATE_KEY
+                        sh 'chmod 400 /tmp/temp_key.pem'
+                        echo "temp_key.pem created in /tmp. Listing /tmp files..."
+                        sh 'ls -l /tmp/temp_key.pem'
 
                         // Retrieve the public IP
                         echo "Fetching public_ip from Terraform outputs..."
