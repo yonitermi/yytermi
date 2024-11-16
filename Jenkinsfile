@@ -70,7 +70,6 @@ pipeline {
                     echo "$PRIVATE_KEY" > temp_key.pem
                     chmod 400 temp_key.pem
                     ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP echo "SSH Connection Successful"
-                    rm -f temp_key.pem
                     '''
                 }
             }
