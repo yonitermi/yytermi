@@ -79,9 +79,11 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'yytermi_mysql_credential', variable: 'ENV_FILE')]) {
                     script {
-                        // Create the target directory on the EC2 instance
+                        // Clean and create the target directory on the EC2 instance
                         sh '''
-                        ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP 'mkdir -p /home/ubuntu/yytermi/'
+                        ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP '
+                        rm -rf /home/ubuntu/yytermi/* && mkdir -p /home/ubuntu/yytermi/
+                        '
                         '''
 
                         // Securely transfer files
