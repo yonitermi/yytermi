@@ -20,7 +20,7 @@ pipeline {
                                   secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                     script {
                         dir('terraform') {
-                            sh """
+                            sh '''
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                             terraform init -input=false
@@ -29,7 +29,7 @@ pipeline {
                                             -target=aws_security_group.yytermi_security_group \
                                             -target=aws_eip.yytermi_static_ip \
                                             -auto-approve
-                            """
+                            '''
                         }
                     }
                 }
@@ -44,28 +44,29 @@ pipeline {
                                   secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                     script {
                         dir('terraform') {
-                            sh """
+                            sh '''
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                             terraform apply -target=aws_instance.yytermi_ubuntu_server \
                                             -target=aws_eip_association.yytermi_eip_attach \
                                             -auto-approve
-                            """
+                            '''
                         }
                     }
                 }
             }
         }
-        
 
         stage('Retrieve Terraform Outputs') {
             steps {
                 script {
                     dir('terraform') {
+                        // Retrieve SSH Private Key
                         env.PRIVATE_KEY = sh(script: "terraform output -raw private_key_pem", returnStdout: true).trim()
                         writeFile file: 'temp_key.pem', text: env.PRIVATE_KEY
                         sh 'chmod 400 temp_key.pem'
 
+                        // Retrieve EC2 Public IP
                         env.PUBLIC_IP = sh(script: "terraform output -raw elastic_ip", returnStdout: true).trim()
                         echo "EC2 Public IP: ${env.PUBLIC_IP}"
                     }
@@ -73,18 +74,16 @@ pipeline {
             }
         }
 
-
         stage('Push Code to EC2') {
             steps {
                 withCredentials([file(credentialsId: 'yytermi_mysql_credential', variable: 'ENV_FILE')]) {
                     script {
-                        // Push required files to the EC2 instance
-                        sh """
-                        scp -i temp_key.pem -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${env.PUBLIC_IP}:/home/ubuntu/yytermi/
-                        scp -i temp_key.pem -o StrictHostKeyChecking=no nginx.conf ubuntu@${env.PUBLIC_IP}:/home/ubuntu/yytermi/
-                        scp -i temp_key.pem -o StrictHostKeyChecking=no install_Docker.sh ubuntu@${env.PUBLIC_IP}:/home/ubuntu/yytermi/
-                        scp -i temp_key.pem -o StrictHostKeyChecking=no $ENV_FILE ubuntu@${env.PUBLIC_IP}:/home/ubuntu/yytermi/.env
-                        """
+                        sh '''
+                        scp -i temp_key.pem -o StrictHostKeyChecking=no docker-compose.yml ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/
+                        scp -i temp_key.pem -o StrictHostKeyChecking=no nginx.conf ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/
+                        scp -i temp_key.pem -o StrictHostKeyChecking=no install_Docker.sh ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/
+                        scp -i temp_key.pem -o StrictHostKeyChecking=no $ENV_FILE ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/.env
+                        '''
                     }
                 }
             }
@@ -93,9 +92,9 @@ pipeline {
         stage('Install Docker on EC2') {
             steps {
                 script {
-                    sh """
-                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${env.PUBLIC_IP} 'chmod +x /home/ubuntu/yytermi/install_Docker.sh && /home/ubuntu/yytermi/install_Docker.sh'
-                    """
+                    sh '''
+                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP 'chmod +x /home/ubuntu/yytermi/install_Docker.sh && /home/ubuntu/yytermi/install_Docker.sh'
+                    '''
                 }
             }
         }
@@ -103,14 +102,13 @@ pipeline {
         stage('Deploy Containers with Docker Compose') {
             steps {
                 script {
-                    sh """
-                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${env.PUBLIC_IP} 'cd /home/ubuntu/yytermi && docker-compose up -d'
-                    """
+                    sh '''
+                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP 'cd /home/ubuntu/yytermi && docker-compose up -d'
+                    '''
                 }
             }
         }
     }
-    
 
     post {
         always {
