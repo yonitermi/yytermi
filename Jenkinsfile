@@ -57,23 +57,25 @@ pipeline {
             }
         }
 
-        stage('Connect to EC2') {
+       stage('Test SSH Connection') {
             steps {
                 script {
                     dir('terraform') {
-                        // Retrieve the private key and Elastic IP from Terraform outputs
                         env.PRIVATE_KEY = sh(script: "terraform output -raw private_key_pem", returnStdout: true).trim()
                         env.PUBLIC_IP = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
                     }
 
-                    // Use file descriptor for private key
+                    // Test SSH connection
                     sh '''
-                    echo "Connecting to EC2 instance at $PUBLIC_IP..."
-                    echo "$PRIVATE_KEY" | ssh -o StrictHostKeyChecking=no -o IdentityFile=/dev/fd/0 ubuntu@$PUBLIC_IP echo "Connection successful!"
+                    echo "$PRIVATE_KEY" > temp_key.pem
+                    chmod 400 temp_key.pem
+                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP echo "SSH Connection Successful"
+                    rm -f temp_key.pem
                     '''
                 }
             }
         }
+
 
 
 
