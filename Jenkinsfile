@@ -66,10 +66,10 @@ pipeline {
                         env.PUBLIC_IP = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
                     }
 
-                    // Directly pipe the private key to ssh
+                    // Use file descriptor for private key
                     sh '''
                     echo "Connecting to EC2 instance at $PUBLIC_IP..."
-                    echo "$PRIVATE_KEY" | ssh -o StrictHostKeyChecking=no -i /dev/stdin ubuntu@$PUBLIC_IP echo "Connection successful!"
+                    echo "$PRIVATE_KEY" | ssh -o StrictHostKeyChecking=no -o IdentityFile=/dev/fd/0 ubuntu@$PUBLIC_IP echo "Connection successful!"
                     '''
                 }
             }
