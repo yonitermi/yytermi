@@ -57,7 +57,7 @@ pipeline {
             }
         }
 
-       stage('Test SSH Connection') {
+        stage('Test SSH Connection') {
             steps {
                 script {
                     dir('terraform') {
@@ -74,6 +74,7 @@ pipeline {
                 }
             }
         }
+
         stage('Install Docker/compose and rsync on EC2') {
             steps {
                 script {
@@ -113,9 +114,9 @@ pipeline {
             }
         }
 
-    
+        
         /*
-        stage('Deploy Containers with Docker Compose') {
+            stage('Deploy Containers with Docker Compose') {
                 steps {
                     script {
                         sh '''
@@ -124,9 +125,9 @@ pipeline {
                     }
                 }
             }
-        }
-        */
-       
+        */   
+    }
+
     post {
         always {
             echo 'Cleaning up temporary files...'
