@@ -75,7 +75,7 @@ pipeline {
             }
         }
         
-        
+
         stage('Install Docker/compose and rsync on EC2') {
                 steps {
                     script {
@@ -113,8 +113,7 @@ pipeline {
                 }
             }
         }
-
-
+    
         /*
         stage('Deploy Containers with Docker Compose') {
                 steps {
@@ -128,7 +127,7 @@ pipeline {
         }
         */
          
-
+    
     post {
         always {
             echo 'Cleaning up temporary files...'
