@@ -82,7 +82,7 @@ pipeline {
                         // Clean and create the target directory on the EC2 instance
                         sh '''
                         ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP '
-                        rm -rf /home/ubuntu/yytermi/* && mkdir -p /home/ubuntu/yytermi/
+                        sudo rm -rf /home/ubuntu/yytermi/* && sudo mkdir -p /home/ubuntu/yytermi/ && sudo chown -R ubuntu:ubuntu /home/ubuntu/yytermi/
                         '
                         '''
 
