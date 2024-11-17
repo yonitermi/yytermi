@@ -113,7 +113,8 @@ pipeline {
                     }
                 }
             }
-        
+        }
+        /*
         stage('Deploy Containers with Docker Compose') {
                 steps {
                     script {
@@ -124,6 +125,7 @@ pipeline {
                 }
             }
         }
+        */
     }     
 
     post {
