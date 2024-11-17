@@ -82,7 +82,9 @@ pipeline {
                         // Clean and create the target directory on the EC2 instance
                         sh '''
                         ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP '
-                        sudo rm -rf /home/ubuntu/yytermi/* && sudo mkdir -p /home/ubuntu/yytermi/ && sudo chown -R ubuntu:ubuntu /home/ubuntu/yytermi/
+                        sudo rm -rf /home/ubuntu/yytermi/* &&
+                        sudo mkdir -p /home/ubuntu/yytermi/ &&
+                        sudo chown -R ubuntu:ubuntu /home/ubuntu/yytermi/
                         '
                         '''
 
@@ -91,13 +93,16 @@ pipeline {
                         scp -i temp_key.pem -o StrictHostKeyChecking=no docker-compose.yml ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/
                         scp -i temp_key.pem -o StrictHostKeyChecking=no nginx.conf ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/
                         scp -i temp_key.pem -o StrictHostKeyChecking=no install_Docker.sh ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/
-                        scp -i temp_key.pem -o StrictHostKeyChecking=no $ENV_FILE ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/.env
+                        scp -i temp_key.pem -o StrictHostKeyChecking=no $ENV_FILE ubuntu@$PUBLIC_IP:/tmp/.env &&
+                        ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP '
+                        sudo mv /tmp/.env /home/ubuntu/yytermi/.env &&
+                        sudo chown ubuntu:ubuntu /home/ubuntu/yytermi/.env
+                        '
                         '''
                     }
                 }
             }
         }
-
 
         
         stage('Install Docker on EC2') {
