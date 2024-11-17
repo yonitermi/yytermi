@@ -75,45 +75,7 @@ pipeline {
             }
         }
         
-
-        stage('Install Docker/compose and rsync on EC2') {
-                steps {
-                    script {
-                        sh '''
-                        ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP 'chmod +x /home/ubuntu/yytermi/install_Docker.sh && /home/ubuntu/yytermi/install_Docker.sh'
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Push Code to EC2') {
-            steps {
-                withCredentials([file(credentialsId: 'yytermi_mysql_credential', variable: 'ENV_FILE')]) {
-                    script {
-                        // Check if the directory exists and create it only if necessary
-                        sh '''
-                        ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP '
-                        if [ ! -d /home/ubuntu/yytermi ]; then
-                            echo "Directory does not exist. Creating it..."
-                            mkdir -p /home/ubuntu/yytermi
-                        else
-                            echo "Directory already exists. Skipping creation."
-                        fi
-                        '
-                        '''
-
-                        // Efficiently transfer files using rsync
-                        sh '''
-                        rsync -avz -e "ssh -i temp_key.pem -o StrictHostKeyChecking=no" \
-                            docker-compose.yml nginx.conf install_Docker.sh $ENV_FILE \
-                            ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/
-                        '''
-                    }
-                }
-            }
-        }
-    
+        
         /*
         stage('Deploy Containers with Docker Compose') {
                 steps {
