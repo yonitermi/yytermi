@@ -99,7 +99,7 @@ pipeline {
         }
 
 
-        /*
+        
         stage('Install Docker on EC2') {
                 steps {
                     script {
@@ -109,8 +109,8 @@ pipeline {
                     }
                 }
             }
-
-            stage('Deploy Containers with Docker Compose') {
+        /*
+        stage('Deploy Containers with Docker Compose') {
                 steps {
                     script {
                         sh '''
