@@ -57,23 +57,40 @@ pipeline {
             }
         }
 
-       stage('Test SSH Connection') {
+        stage('Check EC2 Instance State') {
             steps {
-                script {
-                    dir('terraform') {
-                        env.PRIVATE_KEY = sh(script: "terraform output -raw private_key_pem", returnStdout: true).trim()
-                        env.PUBLIC_IP = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
-                    }
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
+                                credentialsId: 'yytermi_aws', 
+                                accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+                                secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                    script {
+                        dir('terraform') {
+                            // Retrieve Terraform outputs
+                            env.PRIVATE_KEY = sh(script: "terraform output -raw private_key_pem", returnStdout: true).trim()
+                            env.PUBLIC_IP = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
 
-                    // Test SSH connection
-                    sh '''
-                    echo "$PRIVATE_KEY" > temp_key.pem
-                    chmod 400 temp_key.pem
-                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP echo "SSH Connection Successful"
-                    '''
+                            // Check if the instance is running
+                            def instanceState = sh(
+                                script: '''
+                                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                                aws ec2 describe-instances --instance-ids $(terraform output -raw instance_id) --query "Reservations[0].Instances[0].State.Name" --output text
+                                ''',
+                                returnStdout: true
+                            ).trim()
+
+                            if (instanceState != "running") {
+                                echo "Instance is not running. Waiting 30 seconds..."
+                                sleep(time: 30, unit: 'SECONDS')
+                            } else {
+                                echo "Instance is already running. Proceeding..."
+                            }
+                        }
+                    }
                 }
             }
         }
+
         
         stage('Push Code to EC2') {
             steps {
