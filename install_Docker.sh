@@ -44,6 +44,14 @@ else
     echo "Docker Compose is already installed."
 fi
 
+# Check if rsync is installed
+if ! is_installed rsync; then
+    echo "Installing rsync..."
+    sudo apt-get install -y rsync
+else
+    echo "rsync is already installed."
+fi
+
 # Output versions
 echo "Installed Docker version:"
 docker --version
@@ -51,6 +59,10 @@ docker --version
 echo "Installed Docker Compose version:"
 docker-compose --version
 
+if command -v rsync &> /dev/null; then
+    echo "Installed rsync version:"
+    rsync --version | head -n 1
+fi
 
 # Reminder for group changes
 echo "Please log out and log back in (or reboot) for Docker group changes to take effect."
