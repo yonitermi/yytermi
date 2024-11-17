@@ -103,9 +103,9 @@ pipeline {
                         '
                         '''
 
-                        // Efficiently transfer files using rsync
+                        // Forcefully sync files using rsync with checksum
                         sh '''
-                        rsync -avz -e "ssh -i temp_key.pem -o StrictHostKeyChecking=no" \
+                        rsync -avz --checksum -i -e "ssh -i temp_key.pem -o StrictHostKeyChecking=no" \
                             docker-compose.yml nginx.conf install_Docker.sh $ENV_FILE \
                             ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/
                         '''
@@ -114,7 +114,7 @@ pipeline {
             }
         }
 
-        
+
 
         stage('Deploy Containers with Docker Compose') {
             steps {
