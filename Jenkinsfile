@@ -79,12 +79,6 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'yytermi_mysql_credential', variable: 'ENV_FILE')]) {
                     script {
-                        // Create the private key file
-                        sh '''
-                        echo "$PRIVATE_KEY" > temp_key.pem
-                        chmod 400 temp_key.pem
-                        '''
-
                         // Clean and create the target directory on the EC2 instance
                         sh '''
                         ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP '
@@ -103,7 +97,6 @@ pipeline {
                 }
             }
         }
-
 
 
         /*
