@@ -85,7 +85,7 @@ pipeline {
                         ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP '
                         if [ ! -d /home/ubuntu/yytermi ]; then
                             echo "Directory does not exist. Creating it..."
-                            mkdir -p /home/ubuntu/yytermi
+                            mkdir -p /home/ubuntu/yytermi/webpage
                         else
                             echo "Directory already exists. Skipping creation."
                         fi
@@ -96,7 +96,7 @@ pipeline {
                         sh '''
                         rsync -avz --checksum -i -e "ssh -i temp_key.pem -o StrictHostKeyChecking=no" \
                             docker-compose.yml nginx.conf install_Docker.sh $ENV_FILE \
-                            ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/
+                            webpage/ ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/
                         '''
                     }
                 }
