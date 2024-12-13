@@ -142,6 +142,20 @@ pipeline {
                 }
             }
         }
+        
+
+        stage('Install Docker/compose and rsync on EC2') {
+            steps {
+                script {
+                    sh '''
+                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP '
+                    chmod +x /home/ubuntu/yytermi/install_Docker.sh && /home/ubuntu/yytermi/install_Docker.sh
+                    '
+                    '''
+                }
+            }
+        }
+    }
 
     post {
         always {
