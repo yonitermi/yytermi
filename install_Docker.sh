@@ -52,6 +52,16 @@ else
     echo "rsync is already installed."
 fi
 
+# Check if Node.js is installed
+if ! command -v node &> /dev/null; then
+    echo "Installing Node.js and npm..."
+    # Add Node.js repository and install Node.js and npm
+    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+else
+    echo "Node.js is already installed."
+fi
+
 # Output versions
 echo "Installed Docker version:"
 docker --version
@@ -62,6 +72,13 @@ docker-compose --version
 if command -v rsync &> /dev/null; then
     echo "Installed rsync version:"
     rsync --version | head -n 1
+fi
+
+if command -v node &> /dev/null; then
+    echo "Installed Node.js version:"
+    node --version
+    echo "Installed npm version:"
+    npm --version
 fi
 
 # Reminder for group changes
