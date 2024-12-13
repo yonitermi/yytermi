@@ -92,7 +92,7 @@ pipeline {
                         '
                         '''
 
-                        // Forcefully sync files using rsync with checksum
+                        // Sync files and ensure folder structure is preserved
                         sh '''
                         rsync -avz --checksum -i -e "ssh -i temp_key.pem -o StrictHostKeyChecking=no" \
                         docker-compose.yml nginx.conf install_Docker.sh yytermi_react/ \
@@ -114,7 +114,34 @@ pipeline {
                 }
             }
         }
-    }
+
+        stage('Build React App') {
+            steps {
+                script {
+                    sh '''
+                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP '
+                    cd /home/ubuntu/yytermi/yytermi_react
+                    npm install
+                    npm run build
+                    npm run dev
+                    '
+                    '''
+                }
+            }
+        }
+
+        stage('Run Docker Compose') {
+            steps {
+                script {
+                    sh '''
+                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP '
+                    cd /home/ubuntu/yytermi
+                    docker-compose up -d
+                    '
+                    '''
+                }
+            }
+        }
 
     post {
         always {
