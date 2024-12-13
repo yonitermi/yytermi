@@ -10,8 +10,7 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
-      - /home/ubuntu/yytermi/webpage:/usr/share/nginx/html # Map the webpage directory
-
+      
   certbot:
     image: certbot/certbot
     container_name: certbot

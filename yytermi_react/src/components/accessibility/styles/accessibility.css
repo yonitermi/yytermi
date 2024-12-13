@@ -1,0 +1,19 @@
+.high-contrast {
+  background: #000 !important;
+  color: #fff !important;
+}
+
+.high-contrast * {
+  background-color: #000 !important;
+  color: #fff !important;
+  border-color: #fff !important;
+}
+
+.grayscale-mode {
+  filter: grayscale(100%) !important;
+}
+
+.keyboard-navigation :focus {
+  outline: 3px solid #4A90E2 !important;
+  outline-offset: 2px !important;
+}
