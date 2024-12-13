@@ -75,7 +75,6 @@ pipeline {
             }
         }
 
-        
         stage('Push Code to EC2') {
             steps {
                 withCredentials([file(credentialsId: 'yytermi_mysql_credential', variable: 'ENV_FILE')]) {
@@ -142,19 +141,7 @@ pipeline {
                 }
             }
         }
-        
 
-        stage('Install Docker/compose and rsync on EC2') {
-            steps {
-                script {
-                    sh '''
-                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP '
-                    chmod +x /home/ubuntu/yytermi/install_Docker.sh && /home/ubuntu/yytermi/install_Docker.sh
-                    '
-                    '''
-                }
-            }
-        }
     }
 
     post {
