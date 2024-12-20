@@ -100,7 +100,7 @@ pipeline {
 
                         // Replace placeholder in docker-compose.yml
                         sh """
-                        sed -i 's|\\${REACT_IMAGE_URL}|${ecrRepoUri}:latest|' ../docker-compose.yml
+                        sed -i 's|\\${REACT_IMAGE_URL}|${ecrRepoUri}:latest|' ./docker-compose.yml
                         """
 
                         // Verify the replacement
