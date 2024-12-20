@@ -19,32 +19,13 @@ pipeline {
                                   accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                                   secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                     script {
-                        dir('terraform') { // Ensure Terraform commands run in the correct directory
+                        dir('terraform') {
                             sh '''
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                             export TF_IN_AUTOMATION=true
                             terraform init -input=false
                             terraform apply -auto-approve
-                            '''
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Refresh Terraform State') {
-            steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
-                                  credentialsId: 'yytermi_aws', 
-                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
-                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                    script {
-                        dir('terraform') {
-                            sh '''
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            terraform refresh
                             '''
                         }
                     }
@@ -67,7 +48,6 @@ pipeline {
             steps {
                 script {
                     dir('terraform') {
-                        // Fetch the ECR repository URI dynamically
                         def ecrRepoUri = sh(
                             script: "terraform output -raw ecr_repository_uri -no-color",
                             returnStdout: true
@@ -75,7 +55,6 @@ pipeline {
 
                         echo "Using ECR Repository URI: ${ecrRepoUri}"
 
-                        // Login to ECR and push the Docker image
                         sh """
                         aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${ecrRepoUri}
                         docker tag yytermi_react:latest ${ecrRepoUri}:latest
@@ -86,39 +65,10 @@ pipeline {
             }
         }
 
-        stage('Update Docker Compose Image') {
+        stage('Push Project Files to EC2 with rsync') {
             steps {
                 script {
-                    dir('terraform') { // Ensure you're in the correct directory
-                        // Fetch the ECR repository URI dynamically
-                        def ecrRepoUri = sh(
-                            script: "terraform output -raw ecr_repository_uri -no-color",
-                            returnStdout: true
-                        ).trim()
-
-                        echo "Replacing REACT_IMAGE_URL with: ${ecrRepoUri}:latest"
-
-                        // Replace placeholder in docker-compose.yml
-                        sh """
-                        sed -i 's|\\${REACT_IMAGE_URL}|${ecrRepoUri}:latest|' ./docker-compose.yml
-                        """
-
-                        // Verify the replacement
-                        echo "Updated docker-compose.yml:"
-                        sh "cat ../docker-compose.yml"
-                    }
-                }
-            }
-        }
-
-
-
-
-        stage('Push Configuration Files to EC2') {
-            steps {
-                script {
-                    dir('terraform') { // Ensure state is accessed correctly
-                        // Fetch the EC2 public IP dynamically
+                    dir('terraform') {
                         def publicIP = sh(
                             script: "terraform output -raw public_ip -no-color",
                             returnStdout: true
@@ -126,12 +76,9 @@ pipeline {
 
                         echo "EC2 Public IP: ${publicIP}"
 
-                        // Copy updated files to the EC2 instance
+                        // Use rsync to push files to the EC2 instance
                         sh """
-                        ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${publicIP} '
-                        mkdir -p /home/ubuntu/yytermi
-                        '
-                        rsync -avz -e "ssh -i temp_key.pem -o StrictHostKeyChecking=no" \
+                        rsync -avz --checksum -i -e "ssh -i temp_key.pem -o StrictHostKeyChecking=no" \
                             docker-compose.yml nginx.conf install_Docker.sh \
                             ubuntu@${publicIP}:/home/ubuntu/yytermi/
                         """
@@ -140,20 +87,20 @@ pipeline {
             }
         }
 
-        stage('Install Docker/Compose on EC2') {
+        stage('Execute install_Docker.sh on EC2') {
             steps {
                 script {
                     dir('terraform') {
-                        // Fetch the EC2 public IP dynamically
                         def publicIP = sh(
                             script: "terraform output -raw public_ip -no-color",
                             returnStdout: true
                         ).trim()
 
-                        // Install Docker and Docker Compose on the EC2 instance
+                        // SSH into EC2 and execute install_Docker.sh
                         sh """
                         ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${publicIP} '
-                        chmod +x /home/ubuntu/yytermi/install_Docker.sh && /home/ubuntu/yytermi/install_Docker.sh
+                        chmod +x /home/ubuntu/yytermi/install_Docker.sh
+                        /home/ubuntu/yytermi/install_Docker.sh
                         '
                         """
                     }
@@ -161,17 +108,44 @@ pipeline {
             }
         }
 
-        stage('Run Docker Compose on EC2') {
+        stage('Replace Image URL in docker-compose.yml on EC2') {
             steps {
                 script {
                     dir('terraform') {
-                        // Fetch the EC2 public IP dynamically
                         def publicIP = sh(
                             script: "terraform output -raw public_ip -no-color",
                             returnStdout: true
                         ).trim()
 
-                        // Run Docker Compose to start the containers
+                        def ecrRepoUri = sh(
+                            script: "terraform output -raw ecr_repository_uri -no-color",
+                            returnStdout: true
+                        ).trim()
+
+                        echo "Replacing REACT_IMAGE_URL with: ${ecrRepoUri}:latest"
+
+                        // SSH into EC2 and replace the placeholder in docker-compose.yml
+                        sh """
+                        ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${publicIP} '
+                        sed -i "s|\\${REACT_IMAGE_URL}|${ecrRepoUri}:latest|" /home/ubuntu/yytermi/docker-compose.yml
+                        cat /home/ubuntu/yytermi/docker-compose.yml
+                        '
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Deploy with Docker Compose on EC2') {
+            steps {
+                script {
+                    dir('terraform') {
+                        def publicIP = sh(
+                            script: "terraform output -raw public_ip -no-color",
+                            returnStdout: true
+                        ).trim()
+
+                        // SSH into EC2 and deploy the containers
                         sh """
                         ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${publicIP} '
                         cd /home/ubuntu/yytermi
