@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  scroll-padding-top: 4rem;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Custom styles */
+.gap-8 {
+  gap: 1rem !important;
+}
+
+.mb-16 {
+  margin-bottom: 1rem !important;
+}
+
+.mb-6 {
+  margin-bottom: 0rem !important;
+}
+
+.py-8, .py-12 {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+
+.py-3 {
+  padding-top: .75rem !important;
+}
+
+.p-8 {
+  padding: 1rem !important;
+}
+
+/* Contact form specific styles */
+.contact-form label,
+.contact-form input,
+.contact-form textarea,
+.contact-info h2,
+.contact-info h3,
+.contact-info p {
+  text-align: right;
+}
+
+/* Services section specific styles */
+.services-section .bg-white\/10 {
+  background-color: #ffffff1a;
+}
+
+/* Footer styles */
+.footer-content {
+  text-align: center;
+}
+
+/* Toggle button translations */
+.translate-x-0 {
+  --tw-translate-x: -1.5rem !important;
+}
+
+.translate-x-1 {
+  --tw-translate-x: -1.55rem !important;
+}
+
+.translate-x-5 {
+  --tw-translate-x: 0.2rem !important;
+}
