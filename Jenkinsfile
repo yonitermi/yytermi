@@ -68,7 +68,7 @@ pipeline {
             }
         }
 
-       stage('Push Docker Image to ECR') {
+      stage('Push Docker Image to ECR') {
             steps {
                 script {
                     // Fetch ECR repository URI from Terraform outputs
@@ -77,7 +77,7 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    echo "ECR Repository URI: ${ecrRepoUri}" // Debugging step to verify the value
+                    echo "ECR Repository URI: ${ecrRepoUri}" // Debugging step to ensure it's correct
 
                     // Login to ECR and push the Docker image
                     sh """
@@ -88,6 +88,7 @@ pipeline {
                 }
             }
         }
+
 
 
         stage('Update Docker Compose') {
