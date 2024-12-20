@@ -76,7 +76,7 @@ pipeline {
 
                         echo "EC2 Public IP: ${publicIP}"
 
-                        // Check if /home/ubuntu/yytermi exists, and create it if it doesn't
+                        // Ensure the yytermi directory exists on the EC2 instance
                         sh """
                         ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${publicIP} '
                         if [ ! -d /home/ubuntu/yytermi ]; then
@@ -91,13 +91,14 @@ pipeline {
                         // Use rsync to push files to the EC2 instance
                         sh """
                         rsync -avz --checksum -i -e "ssh -i temp_key.pem -o StrictHostKeyChecking=no" \
-                            docker-compose.yml nginx.conf install_Docker.sh \
+                            ../docker-compose.yml ../nginx.conf ../install_Docker.sh \
                             ubuntu@${publicIP}:/home/ubuntu/yytermi/
                         """
                     }
                 }
             }
         }
+
 
 
         stage('Execute install_Docker.sh on EC2') {
