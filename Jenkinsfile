@@ -167,9 +167,17 @@ pipeline {
                             returnStdout: true
                         ).trim()
 
-                        // SSH into EC2 and deploy the containers
+                        def ecrRepoUri = sh(
+                            script: "terraform output -raw ecr_repository_uri -no-color",
+                            returnStdout: true
+                        ).trim()
+
+                        // SSH into EC2, authenticate with ECR, and deploy with Docker Compose
                         sh """
                         ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${publicIP} '
+                        echo "Logging into ECR..."
+                        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${ecrRepoUri}
+                        echo "Starting Docker Compose..."
                         cd /home/ubuntu/yytermi
                         docker-compose up -d
                         '
@@ -178,6 +186,7 @@ pipeline {
                 }
             }
         }
+
     }
 
     post {
