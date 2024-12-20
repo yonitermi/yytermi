@@ -141,7 +141,13 @@ pipeline {
                         // SSH into EC2 and replace the placeholder in docker-compose.yml
                         sh """
                         ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${publicIP} '
-                        sed -i "s|\\${REACT_IMAGE_URL}|${ecrRepoUri}:latest|" /home/ubuntu/yytermi/docker-compose.yml
+                        if grep -q "\\${REACT_IMAGE_URL}" /home/ubuntu/yytermi/docker-compose.yml; then
+                            sed -i "s|\\${REACT_IMAGE_URL}|${ecrRepoUri}:latest|" /home/ubuntu/yytermi/docker-compose.yml
+                            echo "Placeholder replaced successfully."
+                        else
+                            echo "ERROR: Placeholder \\\${REACT_IMAGE_URL} not found in docker-compose.yml"
+                            exit 1
+                        fi
                         cat /home/ubuntu/yytermi/docker-compose.yml
                         '
                         """
@@ -149,6 +155,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('Deploy with Docker Compose on EC2') {
             steps {

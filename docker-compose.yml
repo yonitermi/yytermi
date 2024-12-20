@@ -3,7 +3,7 @@ version: "3.8"
 services:
   # React App Service
   react-app:
-    image: ${REACT_IMAGE_URL} # Placeholder for ECR image URL
+    image: ${REACT_IMAGE_URL}
     container_name: react-app
     restart: always
 
