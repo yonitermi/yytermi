@@ -62,6 +62,20 @@ else
     echo "Node.js is already installed."
 fi
 
+# Check if AWS CLI is installed
+if ! command -v aws &> /dev/null; then
+    echo "Installing AWS CLI..."
+    # Download and install AWS CLI v2
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip awscliv2.zip
+    sudo ./aws/install
+
+    # Clean up installation files
+    rm -rf aws awscliv2.zip
+else
+    echo "AWS CLI is already installed."
+fi
+
 # Output versions
 echo "Installed Docker version:"
 docker --version
@@ -79,6 +93,11 @@ if command -v node &> /dev/null; then
     node --version
     echo "Installed npm version:"
     npm --version
+fi
+
+if command -v aws &> /dev/null; then
+    echo "Installed AWS CLI version:"
+    aws --version
 fi
 
 # Reminder for group changes
