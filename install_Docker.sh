@@ -9,7 +9,7 @@ is_installed() {
 sudo apt-get update
 
 # Install required dependencies
-sudo apt-get install -y software-properties-common apt-transport-https ca-certificates curl gnupg-agent
+sudo apt-get install -y software-properties-common apt-transport-https ca-certificates curl gnupg-agent unzip
 
 # Check if Docker is installed
 if ! is_installed docker-ce; then
@@ -62,23 +62,32 @@ else
     echo "Node.js is already installed."
 fi
 
-# Output versions
-echo "Installed Docker version:"
-docker --version
+# Check if AWS CLI is installed
+if ! command -v aws &> /dev/null; then
+    echo "Installing AWS CLI..."
+    # Download and install AWS CLI v2
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip -q awscliv2.zip
+    sudo ./aws/install
 
-echo "Installed Docker Compose version:"
-docker-compose --version
-
-if command -v rsync &> /dev/null; then
-    echo "Installed rsync version:"
-    rsync --version | head -n 1
+    # Clean up installation files
+    rm -rf aws awscliv2.zip
+else
+    echo "AWS CLI is already installed."
 fi
 
+# Output installed versions for debugging
+echo "Installed Docker version: $(docker --version)"
+echo "Installed Docker Compose version: $(docker-compose --version)"
+if command -v aws &> /dev/null; then
+    echo "Installed AWS CLI version: $(aws --version)"
+fi
+if command -v rsync &> /dev/null; then
+    echo "Installed rsync version: $(rsync --version | head -n 1)"
+fi
 if command -v node &> /dev/null; then
-    echo "Installed Node.js version:"
-    node --version
-    echo "Installed npm version:"
-    npm --version
+    echo "Installed Node.js version: $(node --version)"
+    echo "Installed npm version: $(npm --version)"
 fi
 
 # Reminder for group changes
