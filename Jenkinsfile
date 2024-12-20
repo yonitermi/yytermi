@@ -101,7 +101,7 @@ pipeline {
 
 
 
-        stage('Execute install_Docker.sh on EC2') {
+        stage('Install Dependencies on EC2') {
             steps {
                 script {
                     dir('terraform') {
@@ -110,17 +110,22 @@ pipeline {
                             returnStdout: true
                         ).trim()
 
-                        // SSH into EC2 and execute install_Docker.sh
+                        // Transfer and execute the install_Docker.sh script on EC2
                         sh """
+                        echo "Transferring install_Docker.sh to EC2..."
+                        rsync -avz -e "ssh -i temp_key.pem -o StrictHostKeyChecking=no" install_Docker.sh ubuntu@${publicIP}:/home/ubuntu/install_Docker.sh
+
+                        echo "Executing install_Docker.sh on EC2..."
                         ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${publicIP} '
-                        chmod +x /home/ubuntu/yytermi/install_Docker.sh
-                        /home/ubuntu/yytermi/install_Docker.sh
+                        chmod +x /home/ubuntu/install_Docker.sh
+                        /home/ubuntu/install_Docker.sh
                         '
                         """
                     }
                 }
             }
         }
+
 
         stage('Replace Image URL in docker-compose.yml on EC2') {
             steps {
