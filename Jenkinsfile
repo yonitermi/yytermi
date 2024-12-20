@@ -40,7 +40,7 @@ pipeline {
                     docker run --name $CONTAINER_NAME -d -p 3000:3000 $DOCKER_IMAGE:$IMAGE_TAG
 
                     # Wait for the app to start
-                    sleep 10
+                    sleep 30
 
                     # Test if the app is reachable
                     curl -I http://localhost:3000 || (echo "App is not responding!" && exit 1)
