@@ -37,7 +37,7 @@ pipeline {
             }
         }
 
-        stage('Create EC2 Instance') {
+        stage('Refresh Terraform State') {  // New stage to refresh Terraform state
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
                                   credentialsId: 'yytermi_aws', 
@@ -48,9 +48,7 @@ pipeline {
                             sh '''
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            terraform apply -target=aws_instance.yytermi_ubuntu_server \
-                                            -target=aws_eip_association.yytermi_eip_attach \
-                                            -auto-approve
+                            terraform refresh
                             '''
                         }
                     }
@@ -58,17 +56,7 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {  // New Stage: Build Docker Image
-            steps {
-                script {
-                    sh '''
-                    docker build -t yytermi_react:latest ./yytermi_react
-                    '''
-                }
-            }
-        }
-
-      stage('Push Docker Image to ECR') {
+        stage('Push Docker Image to ECR') {
             steps {
                 script {
                     // Fetch ECR repository URI from Terraform outputs
@@ -77,7 +65,7 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    echo "ECR Repository URI: ${ecrRepoUri}" // Debugging step to ensure it's correct
+                    echo "ECR Repository URI: ${ecrRepoUri}" // Debugging step
 
                     // Login to ECR and push the Docker image
                     sh """
@@ -88,26 +76,6 @@ pipeline {
                 }
             }
         }
-
-
-
-        stage('Update Docker Compose') {
-            steps {
-                script {
-                    // Fetch ECR repository URI from Terraform outputs
-                    def ecrRepoUri = sh(
-                        script: "terraform output -raw ecr_repository_uri",
-                        returnStdout: true
-                    ).trim()
-
-                    // Update the docker-compose.yml file with the ECR image URL
-                    sh """
-                    sed -i 's|\\${REACT_IMAGE_URL}|${ecrRepoUri}:latest|' docker-compose.yml
-                    """
-                }
-            }
-        }
-
 
         stage('Test SSH Connection') {
             steps {
