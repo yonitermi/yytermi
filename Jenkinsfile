@@ -89,23 +89,28 @@ pipeline {
         stage('Update Docker Compose Image') {
             steps {
                 script {
-                    dir('terraform') {
-                        // Fetch the ECR repository URI
+                    dir('terraform') { // Ensure you're in the correct directory
+                        // Fetch the ECR repository URI dynamically
                         def ecrRepoUri = sh(
                             script: "terraform output -raw ecr_repository_uri -no-color",
                             returnStdout: true
                         ).trim()
 
-                        echo "ECR Repository URI: ${ecrRepoUri}"
+                        echo "Replacing REACT_IMAGE_URL with: ${ecrRepoUri}:latest"
 
-                        // Replace the placeholder in docker-compose.yml
+                        // Replace placeholder in docker-compose.yml
                         sh """
-                        sed -i 's|\\${REACT_IMAGE_URL}|${ecrRepoUri}:latest|' docker-compose.yml
+                        sed -i 's|\\${REACT_IMAGE_URL}|${ecrRepoUri}:latest|' ../docker-compose.yml
                         """
+
+                        // Verify the replacement
+                        echo "Updated docker-compose.yml:"
+                        sh "cat ../docker-compose.yml"
                     }
                 }
             }
         }
+
 
 
 
