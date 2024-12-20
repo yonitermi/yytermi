@@ -2,13 +2,13 @@ pipeline {
     agent any
 
     environment {
-        AWS_ACCESS_KEY = credentials('yytermi_aws') // AWS credentials ID in Jenkins
+        AWS_ACCESS_KEY = credentials('yytermi_aws') // AWS credentials for Terraform and Docker
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                checkout scm
+                checkout scm // Pull the code from the repository
             }
         }
 
@@ -23,6 +23,7 @@ pipeline {
                             sh '''
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            export TF_IN_AUTOMATION=true
                             terraform init -input=false
                             terraform apply -auto-approve
                             '''
@@ -54,7 +55,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build the React Docker image
+                    // Build the Docker image for the React application
                     sh '''
                     docker build -t yytermi_react:latest ./yytermi_react
                     '''
@@ -71,7 +72,7 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    echo "ECR Repository URI: ${ecrRepoUri}"
+                    echo "Using ECR Repository URI: ${ecrRepoUri}"
 
                     // Login to ECR and push the Docker image
                     sh """
@@ -92,7 +93,7 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    // Replace the placeholder in docker-compose.yml with the ECR image URL
+                    // Update docker-compose.yml with the ECR image URI
                     sh """
                     sed -i 's|\\${REACT_IMAGE_URL}|${ecrRepoUri}:latest|' docker-compose.yml
                     """
@@ -109,7 +110,7 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    // Sync necessary files to the EC2 instance
+                    // Copy updated files to the EC2 instance
                     sh """
                     ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${publicIP} '
                     mkdir -p /home/ubuntu/yytermi
@@ -131,7 +132,7 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    // Install Docker and Docker Compose on EC2
+                    // Install Docker and Docker Compose on the EC2 instance
                     sh """
                     ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${publicIP} '
                     chmod +x /home/ubuntu/yytermi/install_Docker.sh && /home/ubuntu/yytermi/install_Docker.sh
