@@ -12,7 +12,7 @@ pipeline {
             }
         }
 
-        stage('security-groups/keypair/EIP') {
+        stage('security-groups/keypair/EIP/ECR') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
                                   credentialsId: 'yytermi_aws', 
@@ -28,6 +28,7 @@ pipeline {
                                             -target=aws_key_pair.yytermi_key_pair \
                                             -target=aws_security_group.yytermi_security_group \
                                             -target=aws_eip.yytermi_static_ip \
+                                            -target=aws_ecr_repository.yytermi_react_repo \
                                             -auto-approve
                             '''
                         }
@@ -56,6 +57,53 @@ pipeline {
                 }
             }
         }
+
+        stage('Build Docker Image') {  // New Stage: Build Docker Image
+            steps {
+                script {
+                    sh '''
+                    docker build -t yytermi_react:latest ./yytermi_react
+                    '''
+                }
+            }
+        }
+
+        stage('Push Docker Image to ECR') {
+            steps {
+                script {
+                    // Fetch ECR repository URI from Terraform outputs
+                    def ecrRepoUri = sh(
+                        script: "terraform output -raw ecr_repository_uri",
+                        returnStdout: true
+                    ).trim()
+
+                    // Login to ECR and push the Docker image
+                    sh """
+                    aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${ecrRepoUri}
+                    docker tag yytermi_react:latest ${ecrRepoUri}:latest
+                    docker push ${ecrRepoUri}:latest
+                    """
+                }
+            }
+        }
+
+        stage('Update Docker Compose') {
+            steps {
+                script {
+                    // Fetch ECR repository URI from Terraform outputs
+                    def ecrRepoUri = sh(
+                        script: "terraform output -raw ecr_repository_uri",
+                        returnStdout: true
+                    ).trim()
+
+                    // Update the docker-compose.yml file with the ECR image URL
+                    sh """
+                    sed -i 's|\\${REACT_IMAGE_URL}|${ecrRepoUri}:latest|' docker-compose.yml
+                    """
+                }
+            }
+        }
+
 
         stage('Test SSH Connection') {
             steps {
@@ -86,25 +134,14 @@ pipeline {
                             echo "Creating yytermi folder..."
                             mkdir -p /home/ubuntu/yytermi
                         fi
-                        if [ ! -d /home/ubuntu/yytermi/yytermi_react ]; then
-                            echo "Creating yytermi_react folder..."
-                            mkdir -p /home/ubuntu/yytermi/yytermi_react
-                        fi
                         '
                         '''
 
-                        // Sync specific files to the yytermi folder
+                        // Sync only necessary files to the yytermi folder
                         sh '''
                         rsync -avz --checksum -i -e "ssh -i temp_key.pem -o StrictHostKeyChecking=no" \
                             docker-compose.yml nginx.conf install_Docker.sh \
                             ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/
-                        '''
-
-                        // Sync React project files to the yytermi_react folder
-                        sh '''
-                        rsync -avz --checksum -i -e "ssh -i temp_key.pem -o StrictHostKeyChecking=no" \
-                            yytermi_react/ \
-                            ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/yytermi_react/
                         '''
                     }
                 }
@@ -123,21 +160,6 @@ pipeline {
             }
         }
 
-        stage('Build React App') {
-            steps {
-                script {
-                    sh '''
-                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP '
-                    cd /home/ubuntu/yytermi/yytermi_react
-                    npm install
-                    npm run build
-                    nohup npm run dev > /dev/null 2>&1 &
-                    '
-                    '''
-                }
-            }
-        }
-
         stage('Run Docker Compose') {
             steps {
                 script {
@@ -150,7 +172,6 @@ pipeline {
                 }
             }
         }
-
     }
 
     post {

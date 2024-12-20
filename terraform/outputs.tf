@@ -7,3 +7,6 @@ output "private_key_pem" {
   sensitive = true
 }
 
+output "ecr_repository_uri" {
+  value = aws_ecr_repository.yytermi_react_repo.repository_url
+}

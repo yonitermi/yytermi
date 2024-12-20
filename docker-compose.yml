@@ -1,15 +1,11 @@
 version: "3.8"
 
 services:
-  # React Build Service
-  react-build:
-    build:
-      context: ./yytermi_react
-      dockerfile: Dockerfile # Builds the React app
-    container_name: react-build
-    volumes:
-      - ./yytermi_react:/app    # Mount React app code
-      - ./yytermi_react/dist:/app/dist # Output the build files
+  # React App Service
+  react-app:
+    image: ${REACT_IMAGE_URL} # Placeholder for ECR image URL
+    container_name: react-app
+    restart: always
 
   # NGINX Service
   nginx:
@@ -20,9 +16,10 @@ services:
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro # Custom NGINX config
-      - ./yytermi_react/dist:/usr/share/nginx/html:ro # Serve React build files
       - certbot-etc:/etc/letsencrypt           # SSL certificates
       - certbot-var:/var/lib/letsencrypt       # Certbot challenges
+    depends_on:
+      - react-app
     restart: always
 
   # Certbot Service (Optional, for SSL)
