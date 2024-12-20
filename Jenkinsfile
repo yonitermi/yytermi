@@ -66,7 +66,7 @@ pipeline {
         stage('Push Docker Image to ECR') {
             steps {
                 script {
-                    dir('terraform') { // Run in the Terraform directory to access state
+                    dir('terraform') {
                         // Fetch the ECR repository URI dynamically
                         def ecrRepoUri = sh(
                             script: "terraform output -raw ecr_repository_uri -no-color",
@@ -89,7 +89,7 @@ pipeline {
         stage('Update Docker Compose Image') {
             steps {
                 script {
-                    dir('terraform') { // Ensure we are in the Terraform directory
+                    dir('terraform') {
                         // Fetch the ECR repository URI
                         def ecrRepoUri = sh(
                             script: "terraform output -raw ecr_repository_uri -no-color",
@@ -106,6 +106,7 @@ pipeline {
                 }
             }
         }
+
 
 
         stage('Push Configuration Files to EC2') {
