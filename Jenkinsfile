@@ -76,6 +76,18 @@ pipeline {
 
                         echo "EC2 Public IP: ${publicIP}"
 
+                        // Check if /home/ubuntu/yytermi exists, and create it if it doesn't
+                        sh """
+                        ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${publicIP} '
+                        if [ ! -d /home/ubuntu/yytermi ]; then
+                            echo "Directory /home/ubuntu/yytermi does not exist. Creating it now..."
+                            mkdir -p /home/ubuntu/yytermi
+                        else
+                            echo "Directory /home/ubuntu/yytermi already exists."
+                        fi
+                        '
+                        """
+
                         // Use rsync to push files to the EC2 instance
                         sh """
                         rsync -avz --checksum -i -e "ssh -i temp_key.pem -o StrictHostKeyChecking=no" \
@@ -86,6 +98,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('Execute install_Docker.sh on EC2') {
             steps {
