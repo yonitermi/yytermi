@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        AWS_ACCESS_KEY = credentials('yytermi_aws')  // AWS credentials ID in Jenkins
+        AWS_ACCESS_KEY = credentials('yytermi_aws') // AWS credentials ID in Jenkins
     }
 
     stages {
@@ -12,7 +12,7 @@ pipeline {
             }
         }
 
-        stage('security-groups/keypair/EIP/ECR') {
+        stage('Setup Infrastructure with Terraform') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
                                   credentialsId: 'yytermi_aws', 
@@ -24,12 +24,7 @@ pipeline {
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                             terraform init -input=false
-                            terraform apply -target=tls_private_key.ec2_key \
-                                            -target=aws_key_pair.yytermi_key_pair \
-                                            -target=aws_security_group.yytermi_security_group \
-                                            -target=aws_eip.yytermi_static_ip \
-                                            -target=aws_ecr_repository.yytermi_react_repo \
-                                            -auto-approve
+                            terraform apply -auto-approve
                             '''
                         }
                     }
@@ -37,7 +32,7 @@ pipeline {
             }
         }
 
-        stage('Refresh Terraform State') {  // New stage to refresh Terraform state
+        stage('Refresh Terraform State') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
                                   credentialsId: 'yytermi_aws', 
@@ -56,16 +51,27 @@ pipeline {
             }
         }
 
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build the React Docker image
+                    sh '''
+                    docker build -t yytermi_react:latest ./yytermi_react
+                    '''
+                }
+            }
+        }
+
         stage('Push Docker Image to ECR') {
             steps {
                 script {
-                    // Fetch ECR repository URI from Terraform outputs
+                    // Fetch the ECR repository URI from Terraform outputs
                     def ecrRepoUri = sh(
                         script: "terraform output -raw ecr_repository_uri -no-color",
                         returnStdout: true
                     ).trim()
 
-                    echo "ECR Repository URI: ${ecrRepoUri}" // Debugging step
+                    echo "ECR Repository URI: ${ecrRepoUri}"
 
                     // Login to ECR and push the Docker image
                     sh """
@@ -77,70 +83,80 @@ pipeline {
             }
         }
 
-        stage('Test SSH Connection') {
+        stage('Update Docker Compose Image') {
             steps {
                 script {
-                    dir('terraform') {
-                        env.PRIVATE_KEY = sh(script: "terraform output -raw private_key_pem", returnStdout: true).trim()
-                        env.PUBLIC_IP = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
-                    }
+                    // Fetch the ECR repository URI from Terraform outputs
+                    def ecrRepoUri = sh(
+                        script: "terraform output -raw ecr_repository_uri -no-color",
+                        returnStdout: true
+                    ).trim()
 
-                    // Test SSH connection
-                    sh '''
-                    echo "$PRIVATE_KEY" > temp_key.pem
-                    chmod 400 temp_key.pem
-                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP echo "SSH Connection Successful"
-                    '''
+                    // Replace the placeholder in docker-compose.yml with the ECR image URL
+                    sh """
+                    sed -i 's|\\${REACT_IMAGE_URL}|${ecrRepoUri}:latest|' docker-compose.yml
+                    """
                 }
             }
         }
 
-        stage('Push Code to EC2') {
+        stage('Push Configuration Files to EC2') {
             steps {
-                withCredentials([file(credentialsId: 'yytermi_mysql_credential', variable: 'ENV_FILE')]) {
-                    script {
-                        // Ensure the target folders exist
-                        sh '''
-                        ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP '
-                        if [ ! -d /home/ubuntu/yytermi ]; then
-                            echo "Creating yytermi folder..."
-                            mkdir -p /home/ubuntu/yytermi
-                        fi
-                        '
-                        '''
+                script {
+                    // Fetch public IP from Terraform outputs
+                    def publicIP = sh(
+                        script: "terraform output -raw public_ip -no-color",
+                        returnStdout: true
+                    ).trim()
 
-                        // Sync only necessary files to the yytermi folder
-                        sh '''
-                        rsync -avz --checksum -i -e "ssh -i temp_key.pem -o StrictHostKeyChecking=no" \
-                            docker-compose.yml nginx.conf install_Docker.sh \
-                            ubuntu@$PUBLIC_IP:/home/ubuntu/yytermi/
-                        '''
-                    }
+                    // Sync necessary files to the EC2 instance
+                    sh """
+                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${publicIP} '
+                    mkdir -p /home/ubuntu/yytermi
+                    '
+                    rsync -avz -e "ssh -i temp_key.pem -o StrictHostKeyChecking=no" \
+                        docker-compose.yml nginx.conf install_Docker.sh \
+                        ubuntu@${publicIP}:/home/ubuntu/yytermi/
+                    """
                 }
             }
         }
 
-        stage('Install Docker/compose on EC2') {
+        stage('Install Docker/Compose on EC2') {
             steps {
                 script {
-                    sh '''
-                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP '
+                    // Fetch public IP from Terraform outputs
+                    def publicIP = sh(
+                        script: "terraform output -raw public_ip -no-color",
+                        returnStdout: true
+                    ).trim()
+
+                    // Install Docker and Docker Compose on EC2
+                    sh """
+                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${publicIP} '
                     chmod +x /home/ubuntu/yytermi/install_Docker.sh && /home/ubuntu/yytermi/install_Docker.sh
                     '
-                    '''
+                    """
                 }
             }
         }
 
-        stage('Run Docker Compose') {
+        stage('Run Docker Compose on EC2') {
             steps {
                 script {
-                    sh '''
-                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP '
+                    // Fetch public IP from Terraform outputs
+                    def publicIP = sh(
+                        script: "terraform output -raw public_ip -no-color",
+                        returnStdout: true
+                    ).trim()
+
+                    // Run Docker Compose to start the containers
+                    sh """
+                    ssh -i temp_key.pem -o StrictHostKeyChecking=no ubuntu@${publicIP} '
                     cd /home/ubuntu/yytermi
                     docker-compose up -d
                     '
-                    '''
+                    """
                 }
             }
         }
