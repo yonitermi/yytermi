@@ -33,6 +33,9 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    # Check if the container exists and remove it if it does
+                    docker ps -a -q -f name=$CONTAINER_NAME | grep -q . && docker rm -f $CONTAINER_NAME || true
+
                     # Run the container
                     docker run --name $CONTAINER_NAME -d -p 3000:3000 $DOCKER_IMAGE:$IMAGE_TAG
 
@@ -46,6 +49,7 @@ pipeline {
             }
         }
 
+
         stage('Clean Up') {
             steps {
                 script {
@@ -58,7 +62,7 @@ pipeline {
             }
         }
     }
-    
+
 
     post {
         always {
