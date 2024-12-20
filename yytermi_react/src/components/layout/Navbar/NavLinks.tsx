@@ -1,6 +1,4 @@
 import { ScrollToSection } from '../../ScrollToSection';
-import React from 'react';
-
 interface NavLinksProps {
   onLinkClick?: () => void;
   className?: string;

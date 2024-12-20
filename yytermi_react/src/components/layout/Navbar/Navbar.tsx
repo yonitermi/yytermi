@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom';
 import { FaBars } from 'react-icons/fa';
 import { NavLinks } from './NavLinks';
 import { MobileMenu } from './MobileMenu';
-import React from 'react';
-
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);

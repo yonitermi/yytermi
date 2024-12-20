@@ -1,6 +1,4 @@
 import { FaLinkedin, FaFacebook, FaGithub, FaInstagram } from 'react-icons/fa';
-import React from 'react';
-
 interface SocialLink {
   icon: typeof FaLinkedin;
   href: string;

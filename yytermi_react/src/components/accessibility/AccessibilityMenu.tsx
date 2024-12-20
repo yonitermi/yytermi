@@ -6,8 +6,6 @@ import { useAccessibilityState } from './hooks/useAccessibilityState';
 import { FontSizeControl } from './components/FontSizeControl';
 import { ToggleControl } from './components/ToggleControl';
 import './styles/accessibility.css';
-import React from 'react';
-
 export const AccessibilityMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const {

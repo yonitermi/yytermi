@@ -1,7 +1,5 @@
 import { motion } from 'framer-motion';
 import type { Service } from '../../data/services';
-import React from 'react';
-
 interface ServiceCardProps {
   service: Service;
   index: number;

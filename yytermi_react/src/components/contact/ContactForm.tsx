@@ -1,8 +1,6 @@
 import { FormEvent } from 'react';
 import { InputField, TextAreaField } from './ContactFormField';
 import { SubmitButton } from './SubmitButton';
-import React from 'react';
-
 export const ContactForm = () => {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();

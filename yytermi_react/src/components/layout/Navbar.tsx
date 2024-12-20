@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaBars, FaTimes } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
-import React from 'react';
-
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
 

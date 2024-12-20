@@ -1,6 +1,4 @@
 import { InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
-import React from 'react';
-
 interface BaseFieldProps {
   label: string;
 }

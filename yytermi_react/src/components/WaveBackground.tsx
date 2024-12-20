@@ -1,6 +1,4 @@
 import { useSpring, animated } from '@react-spring/web';
-import React from 'react';
-
 export const WaveBackground = () => {
   const props = useSpring({
     from: { transform: 'translateY(0px)' },

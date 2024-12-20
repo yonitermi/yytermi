@@ -1,6 +1,4 @@
 import { IconType } from 'react-icons';
-import React from 'react';
-
 interface ToggleControlProps {
   icon: IconType;
   label: string;

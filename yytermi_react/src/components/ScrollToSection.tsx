@@ -1,7 +1,5 @@
 import { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import React from 'react';
-
 interface ScrollToSectionProps {
   to: string;
   children: ReactNode;

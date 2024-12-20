@@ -1,6 +1,4 @@
 import { FaLinkedin, FaFacebook, FaGithub, FaInstagram } from 'react-icons/fa';
-import React from 'react';
-
 export const Footer = () => {
   return (
     <footer className="bg-white/10 backdrop-blur-lg py-8">

@@ -1,6 +1,4 @@
 import { FaPlus, FaMinus } from 'react-icons/fa';
-import React from 'react';
-
 interface FontSizeControlProps {
   fontSize: number;
   onAdjust: (increase: boolean) => void;

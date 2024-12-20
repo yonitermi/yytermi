@@ -4,8 +4,6 @@ import { Footer } from './Footer/Footer';
 import { ParticleBackground } from '../background/ParticleBackground';
 import { WaveBackground } from '../background/WaveBackground';
 import { AccessibilityMenu } from '../accessibility/AccessibilityMenu';
-import React from 'react';
-
 interface LayoutProps {
   children: ReactNode;
 }

@@ -1,8 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { NavLinks } from './NavLinks';
 import { FaTimes } from 'react-icons/fa';
-import React from 'react';
-
 interface MobileMenuProps {
   isOpen: boolean;
   onClose: () => void;

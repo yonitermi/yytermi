@@ -1,8 +1,6 @@
 import { IconType } from 'react-icons';
 import { motion } from 'framer-motion';
 import { SecurityFeatureItem } from './SecurityFeatureItem';
-import React from 'react';
-
 interface SecurityFeatureProps {
   icon: IconType;
   title: string;
