@@ -1,4 +1,4 @@
-# Stage 1: Build the React app using Vite
+# Build stage for the React app using Vite
 FROM node:16 as build
 
 WORKDIR /app
@@ -7,14 +7,9 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# Stage 2: Production image with NGINX
-FROM nginx:alpine
+# Use a minimal image for artifact delivery
+FROM alpine:3.18
 
-# Copy the Vite build output to NGINX's default serving directory
-COPY --from=build /app/dist /usr/share/nginx/html
-
-# Expose ports
-EXPOSE 80 443
-
-# Start NGINX
-CMD ["nginx", "-g", "daemon off;"]
+WORKDIR /app
+COPY --from=build /app/dist /app
+CMD ["ls", "-l", "/app"] # Debugging step to confirm the dist files are included
