@@ -1,15 +1,9 @@
 version: "3.8"
 
 services:
-  # React App Service
-  react-app:
-    image: ${REACT_IMAGE_URL}
-    container_name: react-app
-    restart: always
-
   # NGINX Service
   nginx:
-    image: nginx:latest
+    image: ${REACT_IMAGE_URL}
     container_name: nginx
     ports:
       - "80:80"
@@ -18,8 +12,6 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro # Custom NGINX config
       - certbot-etc:/etc/letsencrypt           # SSL certificates
       - certbot-var:/var/lib/letsencrypt       # Certbot challenges
-    depends_on:
-      - react-app
     restart: always
 
   # Certbot Service (Optional, for SSL)
